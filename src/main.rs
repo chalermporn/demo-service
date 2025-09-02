@@ -1,7 +1,7 @@
 use axum::{
     extract::Path,
     http::StatusCode,
-    response::Json,
+    response::{Json, Html},
     routing::{get, post, put, delete},
     Router,
 };
@@ -9,11 +9,13 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Row, SqlitePool};
 use tokio::net::TcpListener;
 use uuid::Uuid;
+use utoipa::{OpenApi, ToSchema};
 
 type DatabasePool = SqlitePool;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Product {
+    #[schema(value_type = String, format = "uuid")]
     pub id: Uuid,
     pub name: String,
     pub description: String,
@@ -23,7 +25,7 @@ pub struct Product {
     pub updated_at: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct CreateProductRequest {
     pub name: String,
     pub description: String,
@@ -31,13 +33,36 @@ pub struct CreateProductRequest {
     pub category: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct UpdateProductRequest {
     pub name: Option<String>,
     pub description: Option<String>,
     pub price: Option<f64>,
     pub category: Option<String>,
 }
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        get_all_products,
+        create_product,
+        get_product,
+        update_product,
+        delete_product
+    ),
+    components(
+        schemas(Product, CreateProductRequest, UpdateProductRequest)
+    ),
+    tags(
+        (name = "products", description = "Product management API")
+    ),
+    info(
+        title = "Demo Service API",
+        description = "A simple product management API",
+        version = "0.1.0"
+    )
+)]
+struct ApiDoc;
 
 #[tokio::main]
 async fn main() {
@@ -73,6 +98,8 @@ async fn main() {
         .route("/products/:id", get(get_product))
         .route("/products/:id", put(update_product))
         .route("/products/:id", delete(delete_product))
+        .route("/api-docs/openapi.json", get(openapi_json))
+        .route("/swagger-ui", get(swagger_ui))
         .with_state(pool);
 
     let listener = TcpListener::bind("127.0.0.1:3000").await.unwrap();
@@ -81,6 +108,15 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
+#[utoipa::path(
+    get,
+    path = "/products",
+    responses(
+        (status = 200, description = "List all products successfully", body = [Product]),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "products"
+)]
 async fn get_all_products(
     axum::extract::State(pool): axum::extract::State<DatabasePool>,
 ) -> Result<Json<Vec<Product>>, StatusCode> {
@@ -107,12 +143,21 @@ async fn get_all_products(
     Ok(Json(products))
 }
 
+#[utoipa::path(
+    post,
+    path = "/products",
+    request_body = CreateProductRequest,
+    responses(
+        (status = 201, description = "Product created successfully", body = Product),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "products"
+)]
 async fn create_product(
     axum::extract::State(pool): axum::extract::State<DatabasePool>,
     Json(request): Json<CreateProductRequest>,
 ) -> Result<(StatusCode, Json<Product>), StatusCode> {
     let id = Uuid::new_v4();
-    let now = "CURRENT_TIMESTAMP";
 
     sqlx::query(
         "INSERT INTO products (id, name, description, price, category, created_at, updated_at) VALUES (?, ?, ?, ?, ?, datetime('now'), datetime('now'))"
@@ -148,6 +193,19 @@ async fn create_product(
     Ok((StatusCode::CREATED, Json(product)))
 }
 
+#[utoipa::path(
+    get,
+    path = "/products/{id}",
+    params(
+        ("id" = Uuid, Path, description = "Product ID")
+    ),
+    responses(
+        (status = 200, description = "Product found successfully", body = Product),
+        (status = 404, description = "Product not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "products"
+)]
 async fn get_product(
     axum::extract::State(pool): axum::extract::State<DatabasePool>,
     Path(id): Path<Uuid>,
@@ -177,6 +235,20 @@ async fn get_product(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/products/{id}",
+    params(
+        ("id" = Uuid, Path, description = "Product ID")
+    ),
+    request_body = UpdateProductRequest,
+    responses(
+        (status = 200, description = "Product updated successfully", body = Product),
+        (status = 404, description = "Product not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "products"
+)]
 async fn update_product(
     axum::extract::State(pool): axum::extract::State<DatabasePool>,
     Path(id): Path<Uuid>,
@@ -244,6 +316,19 @@ async fn update_product(
     Ok(Json(product))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/products/{id}",
+    params(
+        ("id" = Uuid, Path, description = "Product ID")
+    ),
+    responses(
+        (status = 204, description = "Product deleted successfully"),
+        (status = 404, description = "Product not found"),
+        (status = 500, description = "Internal server error")
+    ),
+    tag = "products"
+)]
 async fn delete_product(
     axum::extract::State(pool): axum::extract::State<DatabasePool>,
     Path(id): Path<Uuid>,
@@ -259,4 +344,33 @@ async fn delete_product(
     } else {
         Err(StatusCode::NOT_FOUND)
     }
+}
+
+async fn openapi_json() -> Result<Json<utoipa::openapi::OpenApi>, StatusCode> {
+    Ok(Json(ApiDoc::openapi()))
+}
+
+async fn swagger_ui() -> Html<&'static str> {
+    Html(r#"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Swagger UI</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui.css" />
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
+    <script>
+        SwaggerUIBundle({
+            url: '/api-docs/openapi.json',
+            dom_id: '#swagger-ui',
+            presets: [
+                SwaggerUIBundle.presets.apis,
+                SwaggerUIBundle.presets.standalone
+            ]
+        });
+    </script>
+</body>
+</html>"#)
 }
