@@ -1,18 +1,29 @@
-# Demo Service - Rust REST API สำหรับจัดการสินค้า
+# Demo Service - Rust Product Management API
 
-โปรเจกต์นี้เป็น REST API ที่พัฒนาด้วย Rust สำหรับจัดการข้อมูลสินค้า (Product Management System) โดยใช้ฐานข้อมูล SQLite
+A REST API built with Rust for product management using SQLite database, featuring OpenAPI documentation and Swagger UI.
 
-## ⚙️ สถาปัตยกรรมและเทคโนโลยี
+## 🚀 Features
 
-### ไลบรารีหลักที่ใช้
-- **Axum**: Web framework สำหรับสร้าง HTTP server และ API endpoints
-- **SQLx**: Database driver แบบ async สำหรับ SQLite พร้อม type-safe queries
-- **Tokio**: Async runtime สำหรับการทำงานแบบ asynchronous
-- **Serde**: สำหรับ serialization/deserialization ของ JSON
-- **UUID**: สำหรับสร้าง unique identifier ของสินค้า
+- **CRUD Operations**: Complete product management with Create, Read, Update, Delete
+- **SQLite Database**: Persistent storage with automatic table creation
+- **OpenAPI Documentation**: Auto-generated API documentation with Swagger UI
+- **Type Safety**: Rust's type system ensures memory safety and prevents runtime errors
+- **Async/Await**: High-performance concurrent request handling with Tokio
+- **JSON API**: RESTful JSON endpoints with automatic serialization
 
-### โครงสร้างข้อมูล
-โปรเจกต์ใช้ SQLite database (`products.db`) เพื่อเก็บข้อมูลสินค้า
+## ⚙️ Technology Stack
+
+### Core Libraries
+- **Axum**: Modern web framework for HTTP server and API endpoints
+- **SQLx**: Async database driver with type-safe queries for SQLite
+- **Tokio**: Async runtime for concurrent operations
+- **Serde**: JSON serialization/deserialization
+- **UUID**: Unique identifier generation for products
+- **Utoipa**: OpenAPI documentation generation
+
+### Database
+- **SQLite**: Lightweight, embedded database (`products.db`)
+- Automatic table creation and schema management
 
 ## 📊 โครงสร้างข้อมูลสินค้า
 
@@ -35,40 +46,55 @@ pub struct Product {
 
 ## 🚀 API Endpoints
 
-### 1. สร้างสินค้าใหม่
-- **POST** `/products`
-- **Body**: 
-```json
+### Product Management
+- **GET** `/products` - List all products
+- **POST** `/products` - Create a new product
+- **GET** `/products/{id}` - Get product by ID
+- **PUT** `/products/{id}` - Update product by ID
+- **DELETE** `/products/{id}` - Delete product by ID
+
+### Documentation
+- **GET** `/swagger-ui` - Interactive Swagger UI documentation
+- **GET** `/api-docs/openapi.json` - OpenAPI specification in JSON format
+
+### Request/Response Examples
+
+#### Create Product
+```bash
+POST /products
+Content-Type: application/json
+
 {
-    "name": "ชื่อสินค้า",
-    "description": "คำอธิบาย",
-    "price": 1299.99,
-    "category": "หมวดหมู่"
-}
-```
-- **Response**: สินค้าที่สร้างขึ้นพร้อม ID และ timestamp
-
-### 2. ดูสินค้าทั้งหมด
-- **GET** `/products`
-- **Response**: Array ของสินค้าทั้งหมดในระบบ
-
-### 3. ดูสินค้าตาม ID
-- **GET** `/products/{id}`
-- **Response**: ข้อมูลสินค้าที่ระบุ หรือ 404 Not Found
-
-### 4. แก้ไขสินค้า
-- **PUT** `/products/{id}`
-- **Body**: ฟิลด์ที่ต้องการแก้ไข (ส่งเฉพาะที่จำเป็น)
-```json
-{
-    "name": "ชื่อใหม่",
-    "price": 999.99
+    "name": "MacBook Pro",
+    "description": "Professional laptop for developers",
+    "price": 2499.99,
+    "category": "Electronics"
 }
 ```
 
-### 5. ลบสินค้า
-- **DELETE** `/products/{id}`
-- **Response**: 204 No Content หรือ 404 Not Found
+#### Update Product
+```bash
+PUT /products/{id}
+Content-Type: application/json
+
+{
+    "name": "MacBook Pro M3",
+    "price": 2299.99
+}
+```
+
+#### Response Format
+```json
+{
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "MacBook Pro",
+    "description": "Professional laptop for developers",
+    "price": 2499.99,
+    "category": "Electronics",
+    "created_at": "2025-09-02 14:30:00",
+    "updated_at": "2025-09-02 14:30:00"
+}
+```
 
 ## 🔧 การทำงานของโค้ด
 
@@ -103,81 +129,121 @@ async fn main() {
   - `201 CREATED`: สร้างสำเร็จ
   - `204 NO_CONTENT`: ลบสำเร็จ
 
-## 🏗️ การติดตั้งและรันโปรเจกต์
+## 🏗️ Installation & Setup
 
-### ข้อกำหนดเบื้องต้น
+### Prerequisites
 - Rust toolchain (1.70+)
-- SQLite3
+- SQLite3 (automatically handled)
 
-### วิธีการรัน
+### Quick Start
 ```bash
-# Clone และเข้าไปในโฟลเดอร์
+# Clone the repository
 cd demo-service
 
-# ติดตั้ง dependencies
+# Build the project
 cargo build
 
-# รันโปรเจกต์
+# Run the service
 cargo run
 ```
 
-เซิร์ฟเวอร์จะรันที่ `http://127.0.0.1:3000`
+The server will start at `http://127.0.0.1:3000`
 
-## 📝 ตัวอย่างการใช้งาน
+### Available Endpoints
+- API: `http://127.0.0.1:3000/products`
+- Swagger UI: `http://127.0.0.1:3000/swagger-ui`
+- OpenAPI Spec: `http://127.0.0.1:3000/api-docs/openapi.json`
 
-### สร้างสินค้าใหม่
+## 📝 Usage Examples
+
+### Create a Product
 ```bash
 curl -X POST http://127.0.0.1:3000/products \
   -H "Content-Type: application/json" \
   -d '{
     "name": "MacBook Pro",
-    "description": "แล็ปท็อปสำหรับมืออาชีพ",
-    "price": 2499.00,
-    "category": "คอมพิวเตอร์"
+    "description": "Professional laptop for developers",
+    "price": 2499.99,
+    "category": "Electronics"
   }'
 ```
 
-### ดูสินค้าทั้งหมด
+### List All Products
 ```bash
 curl http://127.0.0.1:3000/products
 ```
 
-### แก้ไขสินค้า
+### Get Product by ID
+```bash
+curl http://127.0.0.1:3000/products/{product-id}
+```
+
+### Update Product
 ```bash
 curl -X PUT http://127.0.0.1:3000/products/{product-id} \
   -H "Content-Type: application/json" \
   -d '{
-    "price": 2299.00
+    "price": 2299.99
   }'
 ```
 
-## 🎯 จุดเด่นของโค้ด
+### Delete Product
+```bash
+curl -X DELETE http://127.0.0.1:3000/products/{product-id}
+```
 
-1. **Type Safety**: ใช้ Rust type system เพื่อป้องกัน runtime errors
-2. **Async/Await**: รองรับการทำงานแบบ concurrent ด้วย Tokio
-3. **Memory Safety**: ไม่มี memory leaks ด้วย Rust ownership system
-4. **Error Handling**: จัดการ error อย่างชัดเจนและปลอดภัย
-5. **Database Safety**: Type-safe database queries ด้วย SQLx
-6. **JSON Serialization**: อัตโนมัติด้วย Serde
+## 🎯 Key Features & Architecture
 
-## 📂 โครงสร้างไฟล์
+### Code Highlights
+1. **Type Safety**: Rust's type system prevents runtime errors and ensures memory safety
+2. **Async/Await**: High-performance concurrent request handling with Tokio runtime
+3. **Memory Safety**: Zero-cost abstractions with Rust's ownership system - no memory leaks
+4. **Error Handling**: Explicit error handling with Result types and HTTP status codes
+5. **Database Safety**: Type-safe database queries with SQLx compile-time verification
+6. **Auto Documentation**: OpenAPI spec generation with Swagger UI interface
+
+### HTTP Status Codes
+- `200 OK`: Successful GET requests
+- `201 CREATED`: Successful product creation
+- `204 NO_CONTENT`: Successful deletion
+- `404 NOT_FOUND`: Product not found
+- `500 INTERNAL_SERVER_ERROR`: Database or server errors
+
+## 📂 Project Structure
 ```
 demo-service/
-├── Cargo.toml              # ไฟล์กำหนด dependencies
+├── Cargo.toml              # Dependencies and project configuration
 ├── src/
-│   └── main.rs            # โค้ดหลักของแอปพลิเคชัน
-├── migrations/
-│   └── 001_create_products.sql  # SQL สำหรับสร้างตาราง
-├── products.db            # ไฟล์ฐานข้อมูล SQLite
-└── target/                # ไฟล์ build output
+│   └── main.rs            # Main application code with API handlers
+├── migrations/             # Database migration files (if using sqlx migrate)
+│   └── 001_create_products.sql
+├── products.db            # SQLite database file (auto-created)
+├── README.md              # This documentation
+└── target/                # Rust build artifacts
 ```
 
-## 🔮 การพัฒนาต่อ
+## 🔮 Future Enhancements
 
-สามารถเพิ่มฟีเจอร์เพิ่มเติมได้เช่น:
-- Authentication และ Authorization
-- Pagination สำหรับรายการสินค้า
-- Search และ Filter
-- Validation ที่ซับซ้อนขึ้น
-- Caching
-- Logging และ Monitoring
+Potential features to add:
+- **Authentication & Authorization**: JWT tokens, user roles
+- **Pagination**: Limit/offset for large product lists  
+- **Search & Filtering**: Query products by name, category, price range
+- **Input Validation**: Advanced validation rules and custom error messages
+- **Caching**: Redis integration for improved performance
+- **Logging & Monitoring**: Structured logging and metrics collection
+- **Rate Limiting**: Request throttling and API quotas
+- **Database Migrations**: Versioned schema changes
+- **Testing**: Unit and integration tests
+- **Docker**: Containerization for easy deployment
+
+## 🚀 Production Considerations
+
+For production deployment:
+- Use environment variables for configuration
+- Implement proper logging (tracing, structured logs)
+- Add health check endpoints
+- Configure CORS for web client access
+- Use connection pooling optimization
+- Implement graceful shutdown
+- Add database connection retries
+- Set up monitoring and alerting
