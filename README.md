@@ -105,23 +105,30 @@ async fn main() {
     // 1. สร้างไฟล์ database หากยังไม่มี
     // 2. เชื่อมต่อกับ SQLite database
     // 3. สร้างตาราง products หากยังไม่มี
-    // 4. ตั้งค่า router และ endpoints
+    // 4. สร้าง app จาก library function
     // 5. เริ่มต้น HTTP server ที่ port 3000
 }
 ```
 
-### 2. การจัดการฐานข้อมูล
+### 2. Library Architecture (src/lib.rs)
+- **Modular Design**: Core application logic separated from main entry point
+- **Type Definitions**: Product structs and request/response models
+- **OpenAPI Integration**: Automatic documentation generation with utoipa
+- **Router Configuration**: All endpoints and middleware setup
+- **Handler Functions**: Individual API endpoint implementations
+
+### 3. การจัดการฐานข้อมูล
 - ใช้ **SQLx** สำหรับ database operations แบบ async
 - ใช้ **Connection Pool** เพื่อการจัดการ connection อย่างมีประสิทธิภาพ
 - ทุก query มีการจัดการ error ด้วย `map_err`
 
-### 3. การจัดการ HTTP Requests
+### 4. การจัดการ HTTP Requests
 - ใช้ **Axum extractors** สำหรับดึงข้อมูลจาก request:
   - `Path(id)`: ดึง UUID จาก URL path
   - `Json(request)`: แปลง JSON body เป็น struct
   - `State(pool)`: ดึง database pool จาก application state
 
-### 4. Error Handling
+### 5. Error Handling
 - ทุก function คืนค่า `Result<T, StatusCode>`
 - การจัดการ error แบบ explicit ด้วย HTTP status codes:
   - `500 INTERNAL_SERVER_ERROR`: Database errors
@@ -214,9 +221,9 @@ curl -X DELETE http://127.0.0.1:3000/products/{product-id}
 demo-service/
 ├── Cargo.toml              # Dependencies and project configuration
 ├── src/
-│   └── main.rs            # Main application code with API handlers
-├── migrations/             # Database migration files (if using sqlx migrate)
-│   └── 001_create_products.sql
+│   ├── main.rs            # Application entry point and database setup
+│   └── lib.rs             # Core library with API handlers and business logic
+├── tests/                  # Test files
 ├── products.db            # SQLite database file (auto-created)
 ├── README.md              # This documentation
 └── target/                # Rust build artifacts
@@ -232,9 +239,10 @@ Potential features to add:
 - **Caching**: Redis integration for improved performance
 - **Logging & Monitoring**: Structured logging and metrics collection
 - **Rate Limiting**: Request throttling and API quotas
-- **Database Migrations**: Versioned schema changes
-- **Testing**: Unit and integration tests
+- **Database Migrations**: Versioned schema changes with sqlx-cli
+- **Testing**: Unit and integration tests with test fixtures
 - **Docker**: Containerization for easy deployment
+- **CI/CD**: GitHub Actions for automated testing and deployment
 
 ## 🚀 Production Considerations
 
