@@ -1,0 +1,54 @@
+# Use an older, more stable Rust version
+FROM rust:1.75-slim as builder
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy source code
+COPY . .
+
+# Remove the problematic lock file and let Cargo resolve compatible versions
+RUN rm -f Cargo.lock
+
+# Update dependencies to use older compatible versions
+RUN sed -i 's/version = "1\.0"/version = "1.0.193"/g' Cargo.toml && \
+    sed -i 's/version = "0\.7"/version = "0.7.1"/g' Cargo.toml && \
+    sed -i 's/version = "4\.0"/version = "4.0.0"/g' Cargo.toml
+
+# Generate a new lock file with compatible versions
+RUN cargo generate-lockfile
+
+# Build the application
+RUN cargo build --release
+
+# Runtime stage
+FROM debian:bookworm-slim
+
+WORKDIR /app
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the binary from the builder stage
+COPY --from=builder /app/target/release/demo-service /app/demo-service
+
+# Create directory for database
+RUN mkdir -p /app/data
+
+# Expose port
+EXPOSE 3000
+
+# Set environment variables
+ENV DATABASE_URL=sqlite:/app/data/products.db
+ENV RUST_LOG=info
+
+# Run the binary
+CMD ["./demo-service"]

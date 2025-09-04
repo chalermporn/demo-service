@@ -1,0 +1,41 @@
+# Multi-stage build approach
+FROM rust:latest AS builder
+
+WORKDIR /app
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN cargo build --release
+
+# Runtime stage
+FROM debian:bookworm-slim
+
+WORKDIR /app
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    sqlite3 \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the binary from builder stage
+COPY --from=builder /app/target/release/demo-service /app/demo-service
+
+# Make it executable
+RUN chmod +x /app/demo-service
+
+# Create directory for database
+RUN mkdir -p /app/data
+
+# Expose port
+EXPOSE 3000
+
+# Set environment variables
+ENV DATABASE_URL=sqlite:/app/data/products.db
+ENV RUST_LOG=info
+
+# Run the binary
+CMD ["./demo-service"]
