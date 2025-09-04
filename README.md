@@ -136,22 +136,86 @@ async fn main() {
   - `201 CREATED`: สร้างสำเร็จ
   - `204 NO_CONTENT`: ลบสำเร็จ
 
-## 🏗️ Installation & Setup
+## 🏗️ Build & Installation
 
 ### Prerequisites
 - Rust toolchain (1.70+)
 - SQLite3 (automatically handled)
+- Docker (optional, for containerized deployment)
 
-### Quick Start
+### Build Methods
+
+#### 1. Native Build (Development)
 ```bash
 # Clone the repository
 cd demo-service
 
-# Build the project
+# Build in debug mode (faster compile, debug symbols)
 cargo build
 
-# Run the service
+# Build in release mode (optimized, production-ready)
+cargo build --release
+
+# Run the service (development)
 cargo run
+
+# Run the optimized binary
+./target/release/demo-service
+```
+
+#### 2. Docker Build (Production)
+```bash
+# Build Docker image
+docker build -t demo-service .
+
+# Run with Docker
+docker run -p 3000:3000 -v $(pwd)/data:/app/data demo-service
+
+# Build and run with docker-compose (if available)
+docker-compose up --build
+```
+
+#### 3. Build Commands Reference
+```bash
+# Check code without building
+cargo check
+
+# Build with verbose output
+cargo build --verbose
+
+# Clean build artifacts
+cargo clean
+
+# Run tests
+cargo test
+
+# Format code
+cargo fmt
+
+# Lint code
+cargo clippy
+
+# Build documentation
+cargo doc --open
+```
+
+### Build Artifacts
+- **Debug build**: `target/debug/demo-service` (~50MB, includes debug symbols)
+- **Release build**: `target/release/demo-service` (~10MB, optimized)
+- **Docker image**: Multi-stage build creates minimal production image (~80MB)
+
+### Environment Variables
+```bash
+# Database configuration
+DATABASE_URL=sqlite:./products.db        # Default: products.db in current directory
+DATABASE_URL=sqlite:/app/data/products.db # Docker: persistent volume mount
+
+# Logging configuration
+RUST_LOG=info                            # Log level: error, warn, info, debug, trace
+RUST_BACKTRACE=1                         # Enable stack traces for debugging
+
+# Server configuration
+PORT=3000                                # Default port (currently hardcoded)
 ```
 
 The server will start at `http://127.0.0.1:3000`
