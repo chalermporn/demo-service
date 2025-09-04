@@ -41,7 +41,7 @@ async fn ensure_schema(pool: &SqlitePool) {
 async fn openapi_json_ok() {
     let pool = test_pool().await;
     ensure_schema(&pool).await;
-    let app = build_app(pool);
+    let app = build_app(pool).await;
 
     let res = app
         .oneshot(
@@ -59,7 +59,7 @@ async fn openapi_json_ok() {
 async fn swagger_ui_renders() {
     let pool = test_pool().await;
     ensure_schema(&pool).await;
-    let app = build_app(pool);
+    let app = build_app(pool).await;
 
     let res = app
         .oneshot(
@@ -77,7 +77,7 @@ async fn swagger_ui_renders() {
 async fn list_empty() {
     let pool = test_pool().await;
     ensure_schema(&pool).await;
-    let app = build_app(pool);
+    let app = build_app(pool).await;
 
     let res = app
         .oneshot(
@@ -98,7 +98,7 @@ async fn list_empty() {
 async fn create_get_update_delete_flow() {
     let pool = test_pool().await;
     ensure_schema(&pool).await;
-    let app = build_app(pool.clone());
+    let app = build_app(pool.clone()).await;
 
     // create
     let create_body = json!({

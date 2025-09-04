@@ -30,7 +30,7 @@ async fn main() {
     .await
     .unwrap();
 
-    let app = build_app(pool);
+    let app = build_app(pool).await;
 
     let listener = TcpListener::bind("127.0.0.1:3000").await.unwrap();
     println!("Product service running on http://127.0.0.1:3000");
