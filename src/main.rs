@@ -1,19 +1,19 @@
+use demo_service::build_app;
 use sqlx::SqlitePool;
 use tokio::net::TcpListener;
-use demo_service::build_app;
 
 #[tokio::main]
 async fn main() {
     // Initialize database
     let database_url = "sqlite:./products.db";
-    
+
     // Create database file if it doesn't exist
     if !std::path::Path::new("./products.db").exists() {
         std::fs::File::create("./products.db").unwrap();
     }
-    
+
     let pool = SqlitePool::connect(database_url).await.unwrap();
-    
+
     // Create table if it doesn't exist
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS products (
@@ -24,7 +24,7 @@ async fn main() {
             category TEXT NOT NULL,
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )"
+        )",
     )
     .execute(&pool)
     .await

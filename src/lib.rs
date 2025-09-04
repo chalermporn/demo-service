@@ -7,8 +7,8 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, SqlitePool};
-use uuid::Uuid;
 use utoipa::{OpenApi, ToSchema};
+use uuid::Uuid;
 
 pub type DatabasePool = SqlitePool;
 
@@ -335,4 +335,3 @@ async fn swagger_ui() -> Html<&'static str> {
 </html>"#,
     )
 }
-

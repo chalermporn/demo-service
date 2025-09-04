@@ -1,9 +1,12 @@
-use axum::{body::{Body, to_bytes}, http::{Request, StatusCode}};
-use tower::util::ServiceExt;
+use axum::{
+    body::{to_bytes, Body},
+    http::{Request, StatusCode},
+};
 use demo_service::build_app;
 use serde_json::json;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::SqlitePool;
+use tower::util::ServiceExt;
 use uuid::Uuid;
 
 async fn test_pool() -> SqlitePool {
@@ -41,7 +44,12 @@ async fn openapi_json_ok() {
     let app = build_app(pool);
 
     let res = app
-        .oneshot(Request::builder().uri("/api-docs/openapi.json").body(Body::empty()).unwrap())
+        .oneshot(
+            Request::builder()
+                .uri("/api-docs/openapi.json")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
     assert_eq!(res.status(), StatusCode::OK);
@@ -54,7 +62,12 @@ async fn swagger_ui_renders() {
     let app = build_app(pool);
 
     let res = app
-        .oneshot(Request::builder().uri("/swagger-ui").body(Body::empty()).unwrap())
+        .oneshot(
+            Request::builder()
+                .uri("/swagger-ui")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
     assert_eq!(res.status(), StatusCode::OK);
@@ -67,7 +80,12 @@ async fn list_empty() {
     let app = build_app(pool);
 
     let res = app
-        .oneshot(Request::builder().uri("/products").body(Body::empty()).unwrap())
+        .oneshot(
+            Request::builder()
+                .uri("/products")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
     assert_eq!(res.status(), StatusCode::OK);
