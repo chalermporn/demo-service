@@ -10,8 +10,9 @@ use utoipa::OpenApi;
 use uuid::Uuid;
 
 use crate::{
-    application::{ProductService, RepositoryError},
+    application::ProductService,
     domain::{CreateProductRequest, Price, Product, ProductId, UpdateProductRequest},
+    infrastructure::error::AppError,
 };
 
 pub struct WebAdapter {
@@ -70,11 +71,9 @@ struct ApiDoc;
 )]
 async fn get_all_products(
     State(service): State<Arc<ProductService>>,
-) -> Result<Json<Vec<Product>>, StatusCode> {
-    match service.get_all_products().await {
-        Ok(products) => Ok(Json(products)),
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-    }
+) -> Result<Json<Vec<Product>>, AppError> {
+    let products = service.get_all_products().await?;
+    Ok(Json(products))
 }
 
 #[utoipa::path(
@@ -91,12 +90,9 @@ async fn get_all_products(
 async fn create_product(
     State(service): State<Arc<ProductService>>,
     Json(request): Json<CreateProductRequest>,
-) -> Result<(StatusCode, Json<Product>), StatusCode> {
-    match service.create_product(request).await {
-        Ok(product) => Ok((StatusCode::CREATED, Json(product))),
-        Err(RepositoryError::InvalidInput(_)) => Err(StatusCode::BAD_REQUEST),
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-    }
+) -> Result<(StatusCode, Json<Product>), AppError> {
+    let product = service.create_product(request).await?;
+    Ok((StatusCode::CREATED, Json(product)))
 }
 
 #[utoipa::path(
@@ -113,14 +109,13 @@ async fn create_product(
 async fn get_product(
     State(service): State<Arc<ProductService>>,
     Path(id): Path<Uuid>,
-) -> Result<Json<Product>, StatusCode> {
+) -> Result<Json<Product>, AppError> {
     let product_id = ProductId::from_uuid(id);
-    
-    match service.get_product_by_id(&product_id).await {
-        Ok(Some(product)) => Ok(Json(product)),
-        Ok(None) => Err(StatusCode::NOT_FOUND),
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-    }
+
+    let product = service.get_product_by_id(&product_id).await?
+        .ok_or_else(|| AppError::NotFound(format!("Product with id {} not found", id)))?;
+
+    Ok(Json(product))
 }
 
 #[utoipa::path(
@@ -140,15 +135,13 @@ async fn update_product(
     State(service): State<Arc<ProductService>>,
     Path(id): Path<Uuid>,
     Json(request): Json<UpdateProductRequest>,
-) -> Result<Json<Product>, StatusCode> {
+) -> Result<Json<Product>, AppError> {
     let product_id = ProductId::from_uuid(id);
-    
-    match service.update_product(&product_id, request).await {
-        Ok(Some(product)) => Ok(Json(product)),
-        Ok(None) => Err(StatusCode::NOT_FOUND),
-        Err(RepositoryError::InvalidInput(_)) => Err(StatusCode::BAD_REQUEST),
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-    }
+
+    let product = service.update_product(&product_id, request).await?
+        .ok_or_else(|| AppError::NotFound(format!("Product with id {} not found", id)))?;
+
+    Ok(Json(product))
 }
 
 #[utoipa::path(
@@ -165,14 +158,15 @@ async fn update_product(
 async fn delete_product(
     State(service): State<Arc<ProductService>>,
     Path(id): Path<Uuid>,
-) -> Result<StatusCode, StatusCode> {
+) -> Result<StatusCode, AppError> {
     let product_id = ProductId::from_uuid(id);
-    
-    match service.delete_product(&product_id).await {
-        Ok(true) => Ok(StatusCode::NO_CONTENT),
-        Ok(false) => Err(StatusCode::NOT_FOUND),
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+
+    let deleted = service.delete_product(&product_id).await?;
+    if !deleted {
+        return Err(AppError::NotFound(format!("Product with id {} not found", id)));
     }
+
+    Ok(StatusCode::NO_CONTENT)
 }
 
 async fn openapi_json() -> Result<Json<utoipa::openapi::OpenApi>, StatusCode> {

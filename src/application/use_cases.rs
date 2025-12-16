@@ -22,6 +22,10 @@ impl ProductService {
     }
 
     pub async fn create_product(&self, request: CreateProductRequest) -> Result<Product, RepositoryError> {
+        // Validate request
+        request.validate()
+            .map_err(|errors| RepositoryError::InvalidInput(errors.join(", ")))?;
+
         let price = Price::new(request.price)
             .map_err(|e| RepositoryError::InvalidInput(e))?;
 
@@ -41,6 +45,10 @@ impl ProductService {
         id: &ProductId,
         request: UpdateProductRequest,
     ) -> Result<Option<Product>, RepositoryError> {
+        // Validate request
+        request.validate()
+            .map_err(|errors| RepositoryError::InvalidInput(errors.join(", ")))?;
+
         let mut product = match self.repository.find_by_id(id).await? {
             Some(product) => product,
             None => return Ok(None),
